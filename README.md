@@ -2,13 +2,23 @@
 
 ## Commands
 
+Commands: 
 - /p COIN - current price for the coin 
-- /h COIN DAYS - historical price graph
-- /f - prices of favorite coins
+- /p COIN DATE - price for specific date in dd/mm/yy format(ex. 02/03/11).
+For current year you can use dd/mm format.
+- /h COIN DAYS - historical price graph for last amount of days
+- /f - price for favorite coins
 - /s COIN - save a coin to favorites
-- /d - delete a coin from favorites
+- /d COIN - delete a coin from favorites
+- /cc CURRENCY - change currency(EUR, USD, GBP..) use internatinal standard three letter code.
+- /mc - multiple prices
 
-Example: /p eth
+
+Developer: @darko_dekan on Telegram
+
+## Future
+
+- There need to be unit or/and integrations tests to be implemented
 
 ## License
 
