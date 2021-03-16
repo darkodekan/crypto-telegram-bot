@@ -39,7 +39,6 @@ class FavoriteCoin(db.Model):
 
 
 
-
 db.create_all()
 
 
@@ -140,7 +139,8 @@ def get_coin_price(m):
 			formatted_price = currency.pretty(coin_price, chat.currency_code)
 			bot.send_message(m.chat.id, formatted_price)
 		else:
-			bot.send_message(m.chat.id, f"{coin_symbol} doesn't exist in database.")
+			bot.send_message(m.chat.id, f"{coin_symbol} doesn't exist in database. \
+				Use codes for coins, not full names.")
 
 	except IndexError:
 		bot.send_message(m.chat.id, "Error: You need to specify coin symbol.\
@@ -234,8 +234,6 @@ def change_currency(m):
 @bot.message_handler(commands=['notify'])
 def notify_all(m):
 	username = m.from_user.username
-	print(username)
-	print(config.ADMINS)
 	if username in config.ADMINS:
 		content = m.text.replace("/notify", "").strip()
 		if not content:

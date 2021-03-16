@@ -1,6 +1,6 @@
 import os
 
-START = """Hello! I am Evil Bot. I keep track of cryptocurrency prices. 
+START = """Hello! I am Evil Bot. I keep track of cryptocurrency prices of thousand coins. 
 Type /help if you want to see all the commands for me.
 I use Cryptocompare API to fetch data.
 I'm still in early stage of development, there may be mainteinance periods
@@ -19,7 +19,6 @@ For current year you can use dd/mm format.
 /s COIN - save a coin to favorites
 /d COIN - delete a coin from favorites
 /cc CURRENCY - change currency(EUR, USD, GBP..) use internatoinal standard three letter code.
-/privacy - info on privacy
 
 If you encounter any bugs or have any feature requests, open an issue in official github repository:
 https://github.com/darkodekan/crypto-telegram-bot
@@ -35,7 +34,7 @@ DATABASE_PATH = "sqlite:///database.sqlite3"
 
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 
-WEBHOOK = "" #if using as a web servet you need to set webhook(url to web server)
+WEBHOOK = "" #if using as a web server you need to set webhook(url to web server)
 
 WEB_SERVER = False # dont forget to set webhook url
 
