@@ -54,7 +54,9 @@ set WEB_SERVER in config.py to True.
 - fix title not showing on graph
 - add to graph legends
 - graph dates for larger data to be more sparse
-
+- add commands to botfather
+- add synonyms
+- overlapping graphs
 ## License
 
 Read the UNLICENSE file.
