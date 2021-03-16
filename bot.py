@@ -6,9 +6,8 @@ import os
 import currency
 from datetime import datetime
 from flask import Flask, request #optional
-from telebot import apihelper
+from telebot import apihelper, types
 from sqla_wrapper import SQLAlchemy
-from enum import Enum
 
 apihelper.ENABLE_MIDDLEWARE = True #  Not used atm
 
@@ -93,7 +92,7 @@ def help(m):
 @bot.message_handler(commands=['id'])
 def get_chat_id(m):
 	chat_id = m.chat.id
-	message = "Chat id is: f{chat_id}"
+	message = f"Chat id is: f{chat_id}"
 	bot.send_message(m.chat.id, message)
 
 
@@ -176,7 +175,7 @@ def save_favorite_coin(m):
 		coin_price = cryptocompare.get_price(coin, currency)
 		if coin_price is None:
 			bot.send_message(m.chat.id, "No such coin in database.")
-		elif FavoriteCoin.exists(coin_symbol=coin):
+		elif FavoriteCoin.exists(chat=chat, coin_symbol=coin):
 			bot.send_message(m.chat.id, "Coin is already saved!")
 		else:
 			favorite_coin = FavoriteCoin(chat=chat, coin_symbol=coin)
@@ -186,9 +185,10 @@ def save_favorite_coin(m):
 
 @bot.message_handler(commands=['d'])
 def delete_favorite_coin(m):
+	chat = Chat.first(telegram_chat_id=m.chat.id)
 	try:
 		coin = m.text.split()[1].strip().upper()
-		favorite_coin = FavoriteCoin.first(coin_symbol=coin)
+		favorite_coin = FavoriteCoin.first(chat=chat, coin_symbol=coin)
 		if favorite_coin:
 			favorite_coin.delete()
 			bot.send_message(m.chat.id, "Removed a coin!")
@@ -228,6 +228,48 @@ def change_currency(m):
 		bot.send_message(m.chat.id, "You need to specify currency")
 	except currency.exceptions.CurrencyException:
 		bot.send_message(m.chat.id, "Invalid currency code.")
+
+from telebot.apihelper import ApiTelegramException
+
+@bot.message_handler(commands=['notify'])
+def notify_all(m):
+	username = m.from_user.username
+	if username == config.ADMIN:
+		content = m.text.replace("/notify", "").strip()
+		if not content:
+			bot.send_message(m.chat.id, "Error: Message is empty")
+			return 
+		chats = db.query(Chat).all()
+		for chat in chats:
+			telegram_chat_id = chat.telegram_chat_id
+			if telegram_chat_id != m.chat.id:
+				bot.send_message(telegram_chat_id, content)
+
+@bot.message_handler(commands=['notifyone'])
+def notify_one(m):
+	"""
+	try:
+		content = m.text.replace("/notifyone", "").strip()
+		chat_id = int(content.split()[0])
+		content = content.replace(str(chat_id), "")
+		bot.send_message(telegram_chat_id, content)
+
+	except IndexError:
+		bot.send_message(m.chat.id, "Incomplete arguments")
+	
+	except ValueError:
+		bot.send_message(m.chat.id, "Id needs to be a number")
+
+	except ApiTelegramException:
+		bot.send_message(m.chat.id, "Wrong chat id")
+	"""
+	pass
+
+
+
+
+
+
 
 		
 
