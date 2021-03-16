@@ -5,19 +5,21 @@ import config
 import os
 import currency
 from datetime import datetime
-from flask import Flask, request #optional
 from telebot import apihelper, types
+from telebot.apihelper import ApiTelegramException
 from sqla_wrapper import SQLAlchemy
 
 apihelper.ENABLE_MIDDLEWARE = True #  Not used atm
 
 bot = telebot.TeleBot(config.TOKEN, threaded=False)
-bot.remove_webhook()
-bot.set_webhook(url=config.WEBHOOK)
 
-app = Flask(__name__)
+if config.WEB_SERVER:
+	from flask import Flask, request
+	bot.remove_webhook()
+	bot.set_webhook(url=config.WEBHOOK)
+	app = Flask(__name__)
 
-db = SQLAlchemy("sqlite:///database.sqlite3")
+db = SQLAlchemy(config.DATABASE_PATH)
 
 
 
@@ -60,14 +62,13 @@ def send_historical_graph(chat, coin, days):
 	os.remove(img_path)
 
 
-#not necessary if not receiving webhooks, you can run just with
-#bot.polling()
-@app.route('/'+config.SECRET, methods=['POST'])
-def webhook():
-	update = telebot.types.Update.de_json(
-		request.stream.read().decode('utf-8'))
-	bot.process_new_updates([update])
-	return 'ok', 200
+if config.WEB_SERVER:
+	@app.route('/'+config.SECRET, methods=['POST'])
+	def webhook():
+		update = telebot.types.Update.de_json(
+			request.stream.read().decode('utf-8'))
+		bot.process_new_updates([update])
+		return 'ok', 200
 
 
 
@@ -229,12 +230,13 @@ def change_currency(m):
 	except currency.exceptions.CurrencyException:
 		bot.send_message(m.chat.id, "Invalid currency code.")
 
-from telebot.apihelper import ApiTelegramException
 
 @bot.message_handler(commands=['notify'])
 def notify_all(m):
 	username = m.from_user.username
-	if username == config.ADMIN:
+	print(username)
+	print(config.ADMINS)
+	if username in config.ADMINS:
 		content = m.text.replace("/notify", "").strip()
 		if not content:
 			bot.send_message(m.chat.id, "Error: Message is empty")
@@ -245,36 +247,45 @@ def notify_all(m):
 			if telegram_chat_id != m.chat.id:
 				bot.send_message(telegram_chat_id, content)
 
+
+@bot.message_handler(commands=['chatids'])
+def get_database(m):
+	username = m.from_user.username
+	if username in config.ADMINS:
+		chats = db.query(Chat).all()
+		if chats:
+			message = "\n".join(str(chat.telegram_chat_id)
+								for chat in chats)
+			bot.send_message(m.chat.id, message)
+		else:
+			bot.send_message(m.chat.id, "No chats in database")
+
+
+
 @bot.message_handler(commands=['notifyone'])
 def notify_one(m):
-	"""
-	try:
-		content = m.text.replace("/notifyone", "").strip()
-		chat_id = int(content.split()[0])
-		content = content.replace(str(chat_id), "")
-		bot.send_message(telegram_chat_id, content)
+	username = m.from_user.username
+	if username in config.ADMINS:
+		try:
+			chat_id_and_content = m.text.replace("/notifyone", "").strip()
+			chat_id = int(chat_id_and_content.split()[0])
+			content = chat_id_and_content.replace(str(chat_id), "")
+			bot.send_message(chat_id, content)
 
-	except IndexError:
-		bot.send_message(m.chat.id, "Incomplete arguments")
-	
-	except ValueError:
-		bot.send_message(m.chat.id, "Id needs to be a number")
+		except IndexError:
+			bot.send_message(m.chat.id, "Incomplete arguments")
+		
+		except ValueError:
+			bot.send_message(m.chat.id, "Id needs to be a number")
 
-	except ApiTelegramException:
-		bot.send_message(m.chat.id, "Wrong chat id")
-	"""
-	pass
-
-
-
-
-
-
-
+		except ApiTelegramException:
+			bot.send_message(m.chat.id, "Wrong chat id")
 		
 
 if __name__ == "__main__":
 	print("Bot is running...")
-	bot.remove_webhook()
-	bot.polling()
-	#app.run() use this when running flask app
+	if config.WEB_SERVER:
+		app.run()
+	else:
+		bot.remove_webhook()
+		bot.polling()
