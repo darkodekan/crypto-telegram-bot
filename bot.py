@@ -243,7 +243,10 @@ def notify_all(m):
 		for chat in chats:
 			telegram_chat_id = chat.telegram_chat_id
 			if telegram_chat_id != m.chat.id:
-				bot.send_message(telegram_chat_id, content)
+				try:
+					bot.send_message(telegram_chat_id, content)
+				except ApiTelegramException:
+					print(telegram_chat_id)
 
 
 @bot.message_handler(commands=['chatids'])
