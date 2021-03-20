@@ -42,20 +42,31 @@ class FavoriteCoin(db.Model):
 db.create_all()
 
 
-def send_historical_graph(chat, coin, days):
-    list_of_prices = cryptocompare.get_historical_price_day(
-        coin, chat.currency_code, limit=days)
-    if not list_of_prices:
-        bot.send_message(chat.telegram_chat_id, "No data for that time period.\
-            Try shorter amount of days.")
-        return
+def send_historical_graph(chat, coins, days):
+    data_coins = []
+    for coin in coins:
+        list_of_prices = cryptocompare.get_historical_price_day(
+            coin, chat.currency_code, limit=days)
+        if not list_of_prices:
+            bot.send_message(chat.telegram_chat_id, "No data for that time period. Try shorter amount of days.")
+            return
+        data_coins.append(list_of_prices)
+
+    
 
     dates = [datetime.utcfromtimestamp(price["time"])
-             for price in list_of_prices]
-    prices = [price["open"] for price in list_of_prices]
+             for price in data_coins[0]]
+    
+    prices_coins = []
+
+    for data in data_coins:
+        prices = [price["open"] for price in data]
+        prices_coins.append(prices)
+
+
     img_path = f"{chat.telegram_chat_id}.jpg"
 
-    graph.plot_graph(coin, dates, prices, img_path)
+    graph.plot_graph(coins, dates, prices_coins, img_path)
     with open(img_path, "rb") as img:
         bot.send_photo(chat.telegram_chat_id, photo=img)
     os.remove(img_path)
@@ -74,9 +85,7 @@ if config.WEB_SERVER:
 @bot.middleware_handler(update_types=['message'])
 def intercept_message(bot_instance, message):
     telegram_chat_id= message.chat.id
-    chat = Chat.create_or_first(telegram_chat_id=telegram_chat_id)
-    if chat:
-        pass
+    Chat.create_or_first(telegram_chat_id=telegram_chat_id)
 
 
 @bot.message_handler(commands=['start'])
@@ -156,17 +165,27 @@ def get_coin_price(m):
 def get_historical_price_graph(m):
     chat = Chat.first(telegram_chat_id=m.chat.id)
     try:
-        text_commands = m.text.split()[1:]
-        coin, days = text_commands
-        days = int(days)
+        user_commands = m.text.split()[1:]
+        days_str = user_commands[-1]
+        days = int(days_str)
+        coins = user_commands[:-1]
     except ValueError:
         bot.send_message(m.chat.id, f"Error: You need to pass coin symbol and days.")
     else:
-        coin_data = cryptocompare.get_price(coin, chat.currency_code)
-        if coin_data:
-            send_historical_graph(chat, coin, days)
+        coins_to_use = [] #add valid coins
+        for coin in coins:
+            coin_data = cryptocompare.get_price(coin, 
+                                                chat.currency_code)
+            if coin_data:
+                coins_to_use.append(coin)
+            else:
+                bot.send_message(m.chat.id, 
+                                f"No data for such coin.")
+        if coins_to_use:
+            send_historical_graph(chat, coins_to_use, days)
         else:
-            bot.send_message(m.chat.id, f"No data for such coin.")
+            bot.send_message(m.chat.id, "No data")
+
 
 
 @bot.message_handler(commands=['s'])

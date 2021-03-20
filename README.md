@@ -57,6 +57,16 @@ set WEB_SERVER in config.py to True.
 - add commands to botfather
 - add synonyms
 - overlapping graphs
+- fix error output date
+- add possibility of year 2020
+- add multiple formats
+- set month locator
+- gets stuck for multiple dates 
+- subcribe to receive notification prices
+- set weeks or days if less than
+- list of coins
+- fix bug finding min and max
+- delete button
 ## License
 
 Read the UNLICENSE file.
